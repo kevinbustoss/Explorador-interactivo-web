@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rick & Morty - Multiverso Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            space: {
+              dark: '#0b0c10',
+              card: '#1f2833',
+              border: '#45a29e',
+              neon: '#66fcf1',
+              accent: '#c5c6c7',
+              portal: '#9bf00b'
+            }
+          },
+          boxShadow: {
+            'portal-glow': '0 0 20px #9bf00b',
+            'neon-glow': '0 0 15px #66fcf1'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-space-dark text-space-accent min-h-screen flex flex-col selection:bg-space-neon selection:text-black">
+
+  <!-- Navbar Superior -->
+  <header class="border-b border-space-border/30 bg-space-dark/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl animate-pulse">🛸</span>
+        <h1 class="text-2xl font-extrabold text-space-neon tracking-wide">
+          MULTIVERSO <span class="text-space-portal">EXPLORER</span>
+        </h1>
+      </div>
+      <nav class="flex items-center gap-6 text-sm font-semibold">
+        <button id="nav-characters" class="text-space-neon border-b-2 border-space-neon pb-1 transition">Personajes</button>
+        <button id="nav-episodes" class="text-space-accent/70 hover:text-space-neon pb-1 transition">Episodios</button>
+        <button id="nav-favorites" class="text-space-accent/70 hover:text-space-neon pb-1 transition">Favoritos</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Filtros -->
+  <section class="max-w-7xl mx-auto px-4 py-6 w-full">
+    <div class="bg-space-card/60 border border-space-border/40 rounded-xl p-4 md:p-6 backdrop-blur-md shadow-lg flex flex-col md:flex-row items-center gap-4">
+      <input type="text" id="search-input" placeholder="Buscar por nombre..." class="w-full md:flex-grow bg-space-dark/80 border border-space-border/50 rounded-lg px-4 py-2.5 text-white placeholder-space-accent/40 focus:outline-none focus:border-space-neon text-sm">
+      <select id="status-filter" class="w-full md:w-48 bg-space-dark/80 border border-space-border/50 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-space-neon text-sm">
+        <option value="">Todos los estados</option>
+        <option value="alive">Vivo</option>
+        <option value="dead">Muerto</option>
+        <option value="unknown">Desconocido</option>
+      </select>
+      <button id="search-btn" class="w-full md:w-auto bg-space-portal/20 hover:bg-space-portal/30 border border-space-portal text-space-portal font-semibold px-6 py-2.5 rounded-lg transition text-sm shadow-portal-glow">⚡ Buscar</button>
+    </div>
+  </section>
+
+  <!-- Contenido Principal -->
+  <main class="max-w-7xl mx-auto px-4 pb-12 flex-grow w-full">
+    <h2 id="section-title" class="text-xs font-bold uppercase tracking-wider text-space-neon/70 mb-4">RESULTADOS DE ESPECÍMENES</h2>
+    
+    <div id="loading-state" class="hidden flex flex-col items-center justify-center py-20 gap-4">
+      <div class="w-16 h-16 border-4 border-space-portal border-t-transparent rounded-full animate-spin shadow-portal-glow"></div>
+      <p class="text-space-neon font-medium animate-pulse">Abriendo portal interdimensional...</p>
+    </div>
+
+    <div id="error-state" class="hidden text-center py-16 text-space-accent/60 text-sm">No se encontraron registros.</div>
+
+    <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+
+    <nav class="flex justify-center items-center gap-4 mt-10">
+      <button id="prev-page-btn" class="bg-space-card border border-space-border text-white px-4 py-2 rounded-lg text-sm disabled:opacity-30">&larr; Anterior</button>
+      <span id="page-indicator" class="text-xs font-semibold text-space-neon">Página 1</span>
+      <button id="next-page-btn" class="bg-space-card border border-space-border text-white px-4 py-2 rounded-lg text-sm disabled:opacity-30">Siguiente &rarr;</button>
+    </nav>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-space-card border border-space-neon/50 rounded-2xl max-w-md w-full overflow-hidden shadow-neon-glow relative flex flex-col">
+      <div id="modal-content" class="p-0"></div>
+    </div>
+  </div>
+
+  <footer class="border-t border-space-border/20 py-4 text-center text-xs text-space-accent/50 bg-space-dark/90">
+    <p>© 2026 Multiverso Explorer · Rick and Morty API</p>
+  </footer>
+
+  <!-- Lógica JavaScript Integrada -->
+  <script>
+    const FAVKEY = 'rick_morty_favs_v1';
+    function getFavorites() {
+      const data = localStorage.getItem(FAVKEY);
+      return data ? JSON.parse(data) : [];
+    }
+    function isFavorite(id) {
+      return getFavorites().some(fav => fav.id === id);
+    }
+    function toggleFavorite(character) {
+      let favs = getFavorites();
+      const exists = favs.some(fav => fav.id === character.id);
+      if (exists) {
+        favs = favs.filter(fav => fav.id !== character.id);
+      } else {
+        favs.push(character);
+      }
+      localStorage.setItem(FAVKEY, JSON.stringify(favs));
+    }
+
+    const state = { currentTab: 'characters', page: 1, name: '', status: '', totalPages: 1 };
+
+    async function loadData() {
+      const loadingState = document.getElementById('loading-state');
+      const errorState = document.getElementById('error-state');
+      const cardsContainer = document.getElementById('cards-container');
+      const sectionTitle = document.getElementById('section-title');
+      const pageIndicator = document.getElementById('page-indicator');
+      const prevPageBtn = document.getElementById('prev-page-btn');
+      const nextPageBtn = document.getElementById('next-page-btn');
+
+      loadingState.classList.remove('hidden');
+      errorState.classList.add('hidden');
+      cardsContainer.innerHTML = '';
+
+      try {
+        if (state.currentTab === 'favorites') {
+          const favs = getFavorites();
+          loadingState.classList.add('hidden');
+          sectionTitle.textContent = 'ESPECÍMENES FAVORITOS';
+          if (favs.length === 0) {
+            errorState.textContent = 'No tienes personajes favoritos guardados.';
+            errorState.classList.remove('hidden');
+          } else {
+            renderCards(favs, cardsContainer, 'characters');
+          }
+          pageIndicator.textContent = 'Favoritos';
+          prevPageBtn.disabled = true;
+          nextPageBtn.disabled = true;
+          return;
+        }
+
+        if (state.currentTab === 'episodes') {
+          sectionTitle.textContent = 'EPISODIOS DEL MULTIVERSO';
+          const res = await fetch(`https://rickandmortyapi.com/api/episode?page=${state.page}`);
+          const data = await res.json();
+          loadingState.classList.add('hidden');
+          state.totalPages = data.info.pages || 1;
+          renderCards(data.results, cardsContainer, 'episodes');
+          updatePagination();
+          return;
+        }
+
+        sectionTitle.textContent = 'RESULTADOS DE ESPECÍMENES';
+        const params = new URLSearchParams({ page: state.page });
+        if (state.name) params.append('name', state.name);
+        if (state.status) params.append('status', state.status);
+
+        const res = await fetch(`https://rickandmortyapi.com/api/character/?${params.toString()}`);
+        const data = await res.json();
+
+        loadingState.classList.add('hidden');
+        if (res.status === 404 || !data.results) {
+          errorState.classList.remove('hidden');
+        } else {
+          state.totalPages = data.info.pages || 1;
+          renderCards(data.results, cardsContainer, 'characters');
+        }
+        updatePagination();
+      } catch (e) {
+        loadingState.classList.add('hidden');
+        errorState.classList.remove('hidden');
+      }
+    }
+
+    function renderCards(items, container, type) {
+      container.innerHTML = '';
+      items.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'bg-space-card border border-space-border/30 rounded-xl overflow-hidden hover:border-space-neon/60 transition duration-300 shadow-md flex flex-col group cursor-pointer';
+
+        if (type === 'characters') {
+          const isFav = isFavorite(item.id);
+          const statusColor = item.status === 'Alive' ? 'bg-green-500' : item.status === 'Dead' ? 'bg-red-500' : 'bg-gray-500';
+          card.innerHTML = `
+            <div class="relative overflow-hidden w-full h-52 bg-space-dark">
+              <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
+              <button class="fav-btn absolute top-2 right-2 bg-space-dark/80 border border-space-neon text-xl w-9 h-9 rounded-full flex items-center justify-center text-space-neon shadow-neon-glow">${isFav ? '★' : '☆'}</button>
+            </div>
+            <div class="p-4 flex flex-col flex-grow justify-between gap-2">
+              <h3 class="font-bold text-lg text-white group-hover:text-space-neon transition line-clamp-1">${item.name}</h3>
+              <div class="flex items-center gap-2 mt-1 text-xs">
+                <span class="w-2 h-2 rounded-full ${statusColor}"></span>
+                <span class="capitalize text-space-accent">${item.status} - ${item.species}</span>
+              </div>
+            </div>`;
+          card.addEventListener('click', (e) => {
+            if (!e.target.closest('.fav-btn')) openModal(item);
+          });
+          card.querySelector('.fav-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFavorite(item);
+            loadData();
+          });
+        } else {
+          card.innerHTML = `
+            <div class="p-6 flex flex-col gap-3 justify-between h-full bg-space-card/80">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-space-portal bg-space-portal/10 px-2 py-1 rounded border border-space-portal/30">${item.episode}</span>
+                <span class="text-xs text-space-accent/60">${item.air_date}</span>
+              </div>
+              <h3 class="text-base font-bold text-white">${item.name}</h3>
+            </div>`;
+        }
+        container.appendChild(card);
+      });
+    }
+
+    function openModal(char) {
+      const modal = document.getElementById('modal');
+      const content = document.getElementById('modal-content');
+      const statusColor = char.status === 'Alive' ? 'bg-green-500' : char.status === 'Dead' ? 'bg-red-500' : 'bg-gray-500';
+
+      content.innerHTML = `
+        <div class="relative w-full h-56 bg-space-dark"><img src="${char.image}" class="w-full h-full object-cover"></div>
+        <div class="p-6 flex flex-col gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-white">${char.name}</h2>
+            <div class="flex items-center gap-2 mt-1 text-sm">
+              <span class="w-2.5 h-2.5 rounded-full ${statusColor}"></span>
+              <span class="capitalize text-space-accent">${char.status} - ${char.species}</span>
+            </div>
+          </div>
+          <div class="bg-space-dark/80 p-4 rounded-xl border border-space-border/30 text-sm space-y-2">
+            <p class="flex justify-between"><strong class="text-space-neon">Género:</strong> <span class="text-white">${char.gender}</span></p>
+            <p class="flex justify-between"><strong class="text-space-neon">Origen:</strong> <span class="text-white truncate max-w-[180px]">${char.origin.name}</span></p>
+            <p class="flex justify-between"><strong class="text-space-neon">Ubicación:</strong> <span class="text-white truncate max-w-[180px]">${char.location.name}</span></p>
+          </div>
+          <button id="close-modal" class="w-full bg-space-dark border border-space-neon text-space-neon font-medium py-2.5 rounded-xl transition shadow-neon-glow">Cerrar</button>
+        </div>`;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('close-modal').onclick = () => modal.classList.add('hidden');
+    }
+
+    function updatePagination() {
+      document.getElementById('page-indicator').textContent = `Página ${state.page} de ${state.totalPages}`;
+      document.getElementById('prev-page-btn').disabled = state.page <= 1;
+      document.getElementById('next-page-btn').disabled = state.page >= state.totalPages;
+    }
+
+    // Navegación y Botones
+    document.getElementById('nav-characters').onclick = (e) => { setActive(e.target); state.currentTab = 'characters'; state.page = 1; loadData(); };
+    document.getElementById('nav-episodes').onclick = (e) => { setActive(e.target); state.currentTab = 'episodes'; state.page = 1; loadData(); };
+    document.getElementById('nav-favorites').onclick = (e) => { setActive(e.target); state.currentTab = 'favorites'; loadData(); };
+
+    function setActive(btn) {
+      ['nav-characters', 'nav-episodes', 'nav-favorites'].forEach(id => {
+        document.getElementById(id).className = 'text-space-accent/70 hover:text-space-neon pb-1 transition';
+      });
+      btn.className = 'text-space-neon border-b-2 border-space-neon pb-1 transition font-semibold';
+    }
+
+    document.getElementById('search-btn').onclick = () => {
+      state.name = document.getElementById('search-input').value.trim();
+      state.status = document.getElementById('status-filter').value;
+      state.page = 1;
+      loadData();
+    };
+
+    // Pega estas dos nuevas funciones aquí abajo:
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        state.name = document.getElementById('search-input').value.trim();
+        state.status = document.getElementById('status-filter').value;
+        state.page = 1;
+        loadData();
+      }
+    });
+
+    document.getElementById('status-filter').addEventListener('change', () => {
+      state.name = document.getElementById('search-input').value.trim();
+      state.status = document.getElementById('status-filter').value;
+      state.page = 1;
+      loadData();
+    });
+
+    document.getElementById('prev-page-btn').onclick = () => { if(state.page > 1) { state.page--; loadData(); } };
+    document.getElementById('next-page-btn').onclick = () => { if(state.page < state.totalPages) { state.page++; loadData(); } };
+
+    loadData();
+  </script>
+</body>
+</html>
