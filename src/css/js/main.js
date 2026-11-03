@@ -3,7 +3,7 @@ import { renderCards, renderModal } from './ui.js';
 import { getFavorites, toggleFavorite } from './storage.js';
 
 const state = {
-  currentTab: 'characters', // 'characters', 'episodes', 'favorites'
+  currentTab: 'characters', 
   page: 1,
   name: '',
   status: '',

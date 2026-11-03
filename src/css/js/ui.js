@@ -39,7 +39,7 @@ export function renderCards(items, container, onFavoriteClick, onCardClick, type
         onFavoriteClick(item);
       });
     } else {
-      // Vista de Episodios con estilo galáctico
+      
       card.innerHTML = `
         <div class="p-6 flex flex-col gap-3 justify-between h-full bg-space-card/80">
           <div class="flex items-center justify-between">

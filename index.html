@@ -30,7 +30,7 @@
 </head>
 <body class="bg-space-dark text-space-accent min-h-screen flex flex-col selection:bg-space-neon selection:text-black">
 
-  <!-- Navbar Superior -->
+  
   <header class="border-b border-space-border/30 bg-space-dark/80 backdrop-blur-md sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-3">
@@ -47,7 +47,7 @@
     </div>
   </header>
 
-  <!-- Filtros -->
+  
   <section class="max-w-7xl mx-auto px-4 py-6 w-full">
     <div class="bg-space-card/60 border border-space-border/40 rounded-xl p-4 md:p-6 backdrop-blur-md shadow-lg flex flex-col md:flex-row items-center gap-4">
       <input type="text" id="search-input" placeholder="Buscar por nombre..." class="w-full md:flex-grow bg-space-dark/80 border border-space-border/50 rounded-lg px-4 py-2.5 text-white placeholder-space-accent/40 focus:outline-none focus:border-space-neon text-sm">
@@ -61,7 +61,7 @@
     </div>
   </section>
 
-  <!-- Contenido Principal -->
+  
   <main class="max-w-7xl mx-auto px-4 pb-12 flex-grow w-full">
     <h2 id="section-title" class="text-xs font-bold uppercase tracking-wider text-space-neon/70 mb-4">RESULTADOS DE ESPECÍMENES</h2>
     
@@ -81,7 +81,7 @@
     </nav>
   </main>
 
-  <!-- Modal -->
+  
   <div id="modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-space-card border border-space-neon/50 rounded-2xl max-w-md w-full overflow-hidden shadow-neon-glow relative flex flex-col">
       <div id="modal-content" class="p-0"></div>
@@ -92,7 +92,7 @@
     <p>© 2026 Multiverso Explorer · Rick and Morty API</p>
   </footer>
 
-  <!-- Lógica JavaScript Integrada -->
+  
   <script>
     const FAVKEY = 'rick_morty_favs_v1';
     function getFavorites() {
@@ -254,7 +254,7 @@
       document.getElementById('next-page-btn').disabled = state.page >= state.totalPages;
     }
 
-    // Navegación y Botones
+    
     document.getElementById('nav-characters').onclick = (e) => { setActive(e.target); state.currentTab = 'characters'; state.page = 1; loadData(); };
     document.getElementById('nav-episodes').onclick = (e) => { setActive(e.target); state.currentTab = 'episodes'; state.page = 1; loadData(); };
     document.getElementById('nav-favorites').onclick = (e) => { setActive(e.target); state.currentTab = 'favorites'; loadData(); };
@@ -273,7 +273,7 @@
       loadData();
     };
 
-    // Pega estas dos nuevas funciones aquí abajo:
+    
     document.getElementById('search-input').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         state.name = document.getElementById('search-input').value.trim();
